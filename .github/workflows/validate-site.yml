@@ -1,0 +1,58 @@
+name: Validate ATS Scan AI Website
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate static website
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check required website files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -f index.html
+
+          echo "Required website files are available."
+
+      - name: Check basic SEO content
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          grep -qi '<title>' index.html
+          grep -qi 'name="description"' index.html
+          grep -qi '<h1' index.html
+          grep -qi 'https://atsscanai.com/' index.html
+
+          echo "Basic SEO validation passed."
+
+      - name: Check HTML document structure
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          grep -qi '<!doctype html>' index.html
+          grep -qi '<html' index.html
+          grep -qi '<head>' index.html
+          grep -qi '<body>' index.html
+          grep -qi '</html>' index.html
+
+          echo "HTML structure validation passed."
