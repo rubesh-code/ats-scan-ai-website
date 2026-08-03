@@ -14,6 +14,7 @@ jobs:
   validate:
     name: Validate static website
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -22,56 +23,201 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          required=(index.html ats-resume-checker.html how-it-works.html pricing.html faq.html about.html contact.html privacy-policy.html terms.html styles.css script.js robots.txt sitemap.xml assets/logo.svg assets/favicon.svg assets/og-image.png)
+
+          required=(
+            index.html
+            404.html
+            ats-resume-checker.html
+            how-it-works.html
+            pricing.html
+            faq.html
+            about.html
+            contact.html
+            privacy-policy.html
+            terms.html
+            styles.css
+            script.js
+            robots.txt
+            sitemap.xml
+            assets/logo.svg
+            assets/favicon.svg
+            assets/og-image.png
+            assets/hero.webp
+          )
+
           for file in "${required[@]}"; do
-            test -f "$file" || { echo "Missing $file"; exit 1; }
+            if [[ ! -f "$file" ]]; then
+              echo "Missing required file: $file"
+              exit 1
+            fi
           done
+
+          echo "All required files are present."
 
       - name: Check basic SEO tags
         shell: bash
         run: |
           set -euo pipefail
+
           for file in *.html; do
-            grep -qi '<title>' "$file"
-            grep -qi 'name="description"' "$file"
-            grep -qi 'rel="canonical"' "$file"
-            grep -qi '<h1' "$file"
+            echo "Checking SEO tags in $file"
+
+            grep -qi '<title>' "$file" || {
+              echo "$file is missing a title tag"
+              exit 1
+            }
+
+            grep -qi 'name="description"' "$file" || {
+              echo "$file is missing a meta description"
+              exit 1
+            }
+
+            grep -qi 'rel="canonical"' "$file" || {
+              echo "$file is missing a canonical URL"
+              exit 1
+            }
+
+            grep -qi '<h1' "$file" || {
+              echo "$file is missing an H1 heading"
+              exit 1
+            }
           done
-          grep -q 'https://learn.atsscanai.com/sitemap.xml' robots.txt
-          grep -q 'https://learn.atsscanai.com/' sitemap.xml
+
+          grep -q 'https://learn.atsscanai.com/sitemap.xml' robots.txt || {
+            echo "robots.txt does not contain the sitemap URL"
+            exit 1
+          }
+
+          grep -q 'https://learn.atsscanai.com/' sitemap.xml || {
+            echo "sitemap.xml does not contain the website URL"
+            exit 1
+          }
+
+          echo "SEO validation passed."
 
       - name: Check internal linked files
         shell: bash
         run: |
           set -euo pipefail
+
           python - <<'PY'
           from html.parser import HTMLParser
           from pathlib import Path
-          from urllib.parse import urlparse
-          class Parser(HTMLParser):
+          from urllib.parse import unquote, urlparse
+
+
+          class LinkParser(HTMLParser):
               def __init__(self):
                   super().__init__()
-                  self.refs = []
+                  self.references = []
+
               def handle_starttag(self, tag, attrs):
-                  data = dict(attrs)
+                  attributes = dict(attrs)
+
                   for key in ("href", "src"):
-                      if key in data:
-                          self.refs.append(data[key])
+                      value = attributes.get(key)
+
+                      if value:
+                          self.references.append(value)
+
+
           root = Path(".")
           errors = []
+
+
+          def resolve_local_reference(reference):
+              parsed = urlparse(reference)
+
+              # Ignore external links such as Google Analytics,
+              # Microsoft Clarity and the main ATS Scan AI application.
+              if parsed.scheme or parsed.netloc:
+                  return None
+
+              path = unquote(parsed.path).strip()
+
+              # Ignore empty links and page fragments.
+              if not path:
+                  return None
+
+              # The root URL maps to index.html.
+              if path == "/":
+                  return root / "index.html"
+
+              clean_path = path.lstrip("/")
+
+              # Try the exact referenced file first.
+              exact_candidate = root / clean_path
+
+              if exact_candidate.exists():
+                  return exact_candidate
+
+              # Clean URLs such as /faq map to faq.html.
+              if not Path(clean_path).suffix:
+                  html_candidate = root / f"{clean_path}.html"
+
+                  if html_candidate.exists():
+                      return html_candidate
+
+                  index_candidate = root / clean_path / "index.html"
+
+                  if index_candidate.exists():
+                      return index_candidate
+
+              return exact_candidate
+
+
           for page in root.glob("*.html"):
-              parser = Parser()
-              parser.feed(page.read_text(encoding="utf-8"))
-              for ref in parser.refs:
-                  if not ref or ref.startswith(("#", "mailto:", "tel:", "data:")):
+              parser = LinkParser()
+
+              try:
+                  content = page.read_text(encoding="utf-8")
+                  parser.feed(content)
+              except Exception as error:
+                  errors.append(f"{page}: unable to parse HTML: {error}")
+                  continue
+
+              for reference in parser.references:
+                  if reference.startswith(
+                      ("#", "mailto:", "tel:", "data:", "javascript:")
+                  ):
                       continue
-                  parsed = urlparse(ref)
-                  if parsed.scheme or parsed.netloc:
-                      continue
-                  target = ref.split("#", 1)[0].split("?", 1)[0]
-                  if target and not (root / target).exists():
-                      errors.append(f"{page}: missing {target}")
+
+                  target = resolve_local_reference(reference)
+
+                  if target is not None and not target.exists():
+                      errors.append(
+                          f"{page}: missing local reference "
+                          f"{reference} -> {target}"
+                      )
+
+
           if errors:
-              raise SystemExit("\n".join(errors))
+              print("Internal link validation failed:")
+
+              for error in errors:
+                  print(f"- {error}")
+
+              raise SystemExit(1)
+
+
           print("Internal file references are valid.")
           PY
+
+      - name: Check tracking scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for file in *.html; do
+            grep -q 'G-6XS1R06BYN' "$file" || {
+              echo "$file is missing Google Analytics"
+              exit 1
+            }
+
+            grep -q 'xwln8z1vyk' "$file" || {
+              echo "$file is missing Microsoft Clarity"
+              exit 1
+            }
+          done
+
+          echo "Tracking scripts are present on all HTML pages."
