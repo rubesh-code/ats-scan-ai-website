@@ -2,13 +2,9 @@ name: Validate ATS Scan AI Website
 
 on:
   push:
-    branches:
-      - main
-
+    branches: [main]
   pull_request:
-    branches:
-      - main
-
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -18,41 +14,64 @@ jobs:
   validate:
     name: Validate static website
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Check required website files
+      - name: Check required files
         shell: bash
         run: |
           set -euo pipefail
+          required=(index.html ats-resume-checker.html how-it-works.html pricing.html faq.html about.html contact.html privacy-policy.html terms.html styles.css script.js robots.txt sitemap.xml assets/logo.svg assets/favicon.svg assets/og-image.png)
+          for file in "${required[@]}"; do
+            test -f "$file" || { echo "Missing $file"; exit 1; }
+          done
 
-          test -f index.html
-
-          echo "Required website files are available."
-
-      - name: Check basic SEO content
+      - name: Check basic SEO tags
         shell: bash
         run: |
           set -euo pipefail
+          for file in *.html; do
+            grep -qi '<title>' "$file"
+            grep -qi 'name="description"' "$file"
+            grep -qi 'rel="canonical"' "$file"
+            grep -qi '<h1' "$file"
+          done
+          grep -q 'https://learn.atsscanai.com/sitemap.xml' robots.txt
+          grep -q 'https://learn.atsscanai.com/' sitemap.xml
 
-          grep -qi '<title>' index.html
-          grep -qi 'name="description"' index.html
-          grep -qi '<h1' index.html
-          grep -qi 'https://atsscanai.com/' index.html
-
-          echo "Basic SEO validation passed."
-
-      - name: Check HTML document structure
+      - name: Check internal linked files
         shell: bash
         run: |
           set -euo pipefail
-
-          grep -qi '<!doctype html>' index.html
-          grep -qi '<html' index.html
-          grep -qi '<head>' index.html
-          grep -qi '<body>' index.html
-          grep -qi '</html>' index.html
-
-          echo "HTML structure validation passed."
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import urlparse
+          class Parser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.refs = []
+              def handle_starttag(self, tag, attrs):
+                  data = dict(attrs)
+                  for key in ("href", "src"):
+                      if key in data:
+                          self.refs.append(data[key])
+          root = Path(".")
+          errors = []
+          for page in root.glob("*.html"):
+              parser = Parser()
+              parser.feed(page.read_text(encoding="utf-8"))
+              for ref in parser.refs:
+                  if not ref or ref.startswith(("#", "mailto:", "tel:", "data:")):
+                      continue
+                  parsed = urlparse(ref)
+                  if parsed.scheme or parsed.netloc:
+                      continue
+                  target = ref.split("#", 1)[0].split("?", 1)[0]
+                  if target and not (root / target).exists():
+                      errors.append(f"{page}: missing {target}")
+          if errors:
+              raise SystemExit("\n".join(errors))
+          print("Internal file references are valid.")
+          PY
