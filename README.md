@@ -1,40 +1,37 @@
-# ATS Scan AI Static SEO Website
+# ATS Scan AI SEO Website
 
-Public information site: https://learn.atsscanai.com  
-Resume analysis application: https://atsscanai.com
+Static information and SEO website for `https://learn.atsscanai.com`.
 
-This is a plain HTML/CSS/JavaScript site and does not modify the Azure application.
+## Content cluster
 
-## Deploy settings already configured in Cloudflare
+The main pillar page is `ats-resume-checker.html`. The `blog/` folder contains eight supporting ATS resume guides and a guide index. Every guide links back to the pillar page and to related articles.
 
-Build command:
+## Cloudflare build command
+
+Because the site now contains a nested `blog/` folder, use this build command in Cloudflare Workers Builds:
 
 ```bash
-rm -rf dist && mkdir dist && find . -maxdepth 1 -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.xml' -o -name '*.txt' -o -name '*.svg' -o -name '*.png' -o -name '*.ico' \) -exec cp {} dist/ \; && if [ -d assets ]; then cp -R assets dist/assets; fi
+rm -rf dist && mkdir dist && find . -maxdepth 1 -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.xml' -o -name '*.txt' -o -name '*.svg' -o -name '*.png' -o -name '*.ico' \) -exec cp {} dist/ \; && for dir in assets blog; do [ -d "$dir" ] && cp -R "$dir" "dist/$dir"; done
 ```
 
-Deploy command:
+Keep the deploy command:
 
 ```bash
 npx wrangler deploy --assets ./dist --name ats-scan-ai-website --compatibility-date 2026-08-01
 ```
 
-## Publish
+Push changes to `main`; Cloudflare builds and deploys automatically.
 
-Copy all files into `rubesh-code/ats-scan-ai-website`, then:
+## Main application
 
-```bash
-git add .
-git commit -m "Launch complete ATS Scan AI SEO website"
-git pull --rebase origin main
-git push origin main
-```
+Resume analysis, login, credits, and Razorpay payments remain at `https://atsscanai.com`.
 
-Cloudflare will deploy automatically.
+## Main files
 
-## Review before publication
-
-- Confirm product statements still match the live application.
-- Confirm `support@atsscanai.com` is the correct support address.
-- Have the Privacy Policy and Terms reviewed for the correct legal entity, registered address, governing law, refunds, taxes, and target countries.
-- Submit `https://learn.atsscanai.com/sitemap.xml` in Google Search Console after deployment.
+- `index.html` — learning center homepage with guide previews
+- `ats-resume-checker.html` — primary pillar page
+- `blog/index.html` — content cluster hub
+- `blog/*.html` — eight focused ATS resume guides
+- `pricing.html` — ₹99 / 10 credits
+- `sitemap.xml` — root pages and all guide URLs
+- `styles.css`, `script.js`, `robots.txt`

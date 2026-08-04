@@ -1,0 +1,12 @@
+ATS Scan AI content cluster update — 4 August 2026
+
+Added:
+- blog/index.html content hub
+- 8 supporting ATS resume guides
+- Article and breadcrumb structured data
+- Guide navigation and internal links
+- Guide preview section on homepage
+- Expanded ATS Resume Checker pillar page
+- Updated sitemap.xml with all guide URLs
+- Updated CSS for article layouts and guide cards
+- Updated README with the required Cloudflare build command for the blog folder

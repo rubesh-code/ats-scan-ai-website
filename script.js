@@ -1,25 +1,14 @@
-(() => {
-  const toggle = document.querySelector(".menu-toggle");
-  const nav = document.querySelector(".primary-nav");
-  if (toggle && nav) {
-    toggle.addEventListener("click", () => {
-      const open = nav.classList.toggle("is-open");
-      toggle.setAttribute("aria-expanded", String(open));
-    });
-    nav.addEventListener("click", (event) => {
-      if (event.target instanceof HTMLAnchorElement) {
-        nav.classList.remove("is-open");
-        toggle.setAttribute("aria-expanded", "false");
-      }
-    });
-    document.addEventListener("click", (event) => {
-      if (!nav.contains(event.target) && !toggle.contains(event.target)) {
-        nav.classList.remove("is-open");
-        toggle.setAttribute("aria-expanded", "false");
-      }
-    });
-  }
-  document.querySelectorAll("[data-year]").forEach((element) => {
-    element.textContent = String(new Date().getFullYear());
+const toggle = document.querySelector('.menu-toggle');
+const nav = document.querySelector('.site-nav');
+if (toggle && nav) {
+  toggle.addEventListener('click', () => {
+    const open = nav.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.textContent = open ? '✕' : '☰';
   });
-})();
+  nav.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
+    nav.classList.remove('open');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.textContent = '☰';
+  }));
+}
