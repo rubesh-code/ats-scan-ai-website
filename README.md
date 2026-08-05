@@ -1,37 +1,69 @@
-# ATS Scan AI SEO Website
+# ATS Scan AI Static Website — Clean Rebuild
 
-Static information and SEO website for `https://learn.atsscanai.com`.
+This project is a clean static website for **https://learn.atsscanai.com**.
 
-## Content cluster
+## Structure
 
-The main pillar page is `ats-resume-checker.html`. The `blog/` folder contains eight supporting ATS resume guides and a guide index. Every guide links back to the pillar page and to related articles.
+- `site/` — every public website file
+- `site/blog/` — blog hub and eight separate article pages
+- `scripts/build.mjs` — recursively copies the complete `site/` folder to `dist/`
+- `scripts/validate.mjs` — checks SEO tags, analytics IDs, local links, and sitemap coverage
+- `wrangler.jsonc` — Cloudflare Workers Static Assets configuration
 
-## Cloudflare build command
+## Local checks
 
-Because the site now contains a nested `blog/` folder, use this build command in Cloudflare Workers Builds:
-
-```bash
-rm -rf dist && mkdir dist && find . -maxdepth 1 -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.xml' -o -name '*.txt' -o -name '*.svg' -o -name '*.png' -o -name '*.ico' \) -exec cp {} dist/ \; && for dir in assets blog; do [ -d "$dir" ] && cp -R "$dir" "dist/$dir"; done
+```powershell
+npm run validate
+npm run build
 ```
 
-Keep the deploy command:
+After building, confirm:
 
-```bash
-npx wrangler deploy --assets ./dist --name ats-scan-ai-website --compatibility-date 2026-08-01
+```powershell
+Test-Path .\dist\blog\index.html
+Test-Path .\dist\blog\how-to-improve-ats-score.html
 ```
 
-Push changes to `main`; Cloudflare builds and deploys automatically.
+Both should return `True`.
 
-## Main application
+## Cloudflare build settings
 
-Resume analysis, login, credits, and Razorpay payments remain at `https://atsscanai.com`.
+Build command:
 
-## Main files
+```text
+npm run build
+```
 
-- `index.html` — learning center homepage with guide previews
-- `ats-resume-checker.html` — primary pillar page
-- `blog/index.html` — content cluster hub
-- `blog/*.html` — eight focused ATS resume guides
-- `pricing.html` — ₹99 / 10 credits
-- `sitemap.xml` — root pages and all guide URLs
-- `styles.css`, `script.js`, `robots.txt`
+Deploy command:
+
+```text
+npm run deploy
+```
+
+Root directory:
+
+```text
+/
+```
+
+The build script copies the complete directory recursively, so blog folders cannot be skipped.
+
+## Main application links
+
+All primary CTA buttons open:
+
+```text
+https://atsscanai.com/
+```
+
+## Blog URLs
+
+- `https://learn.atsscanai.com/blog/`
+- `https://learn.atsscanai.com/blog/how-to-improve-ats-score`
+- `https://learn.atsscanai.com/blog/ats-friendly-resume-format`
+- `https://learn.atsscanai.com/blog/resume-keywords-from-job-description`
+- `https://learn.atsscanai.com/blog/ats-score-for-freshers`
+- `https://learn.atsscanai.com/blog/pdf-vs-docx-for-ats`
+- `https://learn.atsscanai.com/blog/ats-resume-for-software-engineers`
+- `https://learn.atsscanai.com/blog/ats-resume-for-data-analysts`
+- `https://learn.atsscanai.com/blog/is-80-ats-score-good`

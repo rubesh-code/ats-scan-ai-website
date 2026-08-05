@@ -1,0 +1,12 @@
+{
+  "name": "ats-scan-ai-static-website",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "npm run build && npx wrangler@4.118.0 dev",
+    "deploy": "npm run build && npx wrangler@4.118.0 deploy"
+  }
+}
