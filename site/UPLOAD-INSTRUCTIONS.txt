@@ -1,0 +1,22 @@
+ATS SCAN AI BLOG UPLOAD
+
+Upload these two files while preserving this folder structure:
+
+site/
+├── blog/
+│   └── 1-minute-self-introduction-job-interview-sample.html
+└── images/
+    └── 1-minute-self-introduction-success-guide.png
+
+After deployment, open:
+https://learn.atsscanai.com/site/blog/1-minute-self-introduction-job-interview-sample.html
+
+IMPORTANT:
+Your screenshot shows this incorrect or old URL:
+https://learn.atsscanai.com/site/blog/ats-friendly-resume-format.html
+
+For the new job-interview article, change the blog card/button link to:
+href="/site/blog/1-minute-self-introduction-job-interview-sample.html"
+
+A 404 means the requested filename is not deployed at that exact folder path.
+The HTML content itself cannot fix a missing server file.
